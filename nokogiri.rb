@@ -17,19 +17,19 @@ class ProductCrawler
 
     loop do
       page_url = "#{BASE_SEARCH_URL},#{page_number}"
-      puts "Pobieranie strony: #{page_url}"
+      puts "Fetching page: #{page_url}"
 
       page = fetch_page(page_url)
-      break unless page # Jeśli strona nie zostanie pobrana, przerywamy
+      break unless page
 
       products = scrape_products(page)
-      break if products.empty? # Jeśli nie ma więcej produktów, kończymy
+      break if products.empty?
 
       products.each do |product|
         fetch_product_details(product[:detail_link], product[:title], product[:price])
       end
 
-      page_number += 1 # Przechodzimy do następnej strony
+      page_number += 1
     end
 
     save_to_csv
@@ -41,7 +41,7 @@ class ProductCrawler
     html = URI.open(url).read
     Nokogiri::HTML(html)
   rescue OpenURI::HTTPError => e
-    puts "Błąd pobierania strony: #{e.message}"
+    puts "Error fetching page: #{e.message}"
     nil
   end
 
@@ -55,21 +55,20 @@ class ProductCrawler
         title = title_element.text.strip
         detail_link = title_element['href']
         
-        # Dodanie ukośnika, jeśli brakuje go w URL-u
         detail_link = detail_link.start_with?('/') ? "#{BASE_URL}#{detail_link[1..]}" : "#{BASE_URL}#{detail_link}"
         
         price = product.at_css('.produkty_box_stopka1 span.cena').text.strip
 
         { title: title, price: price, detail_link: detail_link }
       rescue => e
-        puts "Błąd podczas pobierania danych produktu: #{e.message}"
+        puts "Error fetching product data: #{e.message}"
         next
       end
     end.compact
   end
 
   def fetch_product_details(url, title, price)
-    puts "Pobieranie szczegółów produktu: #{title}"
+    puts "Fetching product details: #{title}"
     page = fetch_page(url)
     return unless page
 
@@ -91,7 +90,7 @@ class ProductCrawler
         url: url
       }
     rescue => e
-      puts "Błąd podczas pobierania szczegółów: #{e.message}"
+      puts "Error fetching product details: #{e.message}"
     end
   end
 
@@ -108,39 +107,39 @@ class ProductCrawler
   end
 
   def download_image(url, filename)
-    puts "Pobieranie zdjęcia: #{url} -> #{filename}"
+    puts "Downloading image: #{url} -> #{filename}"
     URI.open(url) do |image|
       File.open(filename, 'wb') do |file|
         file.write(image.read)
       end
     end
   rescue => e
-    puts "Błąd pobierania zdjęcia: #{e.message}"
+    puts "Error downloading image: #{e.message}"
   end
 
   def get_catalog_number(page)
     catalog_info = page.xpath("//text()[contains(., 'nr katalogowy')]").first
     if catalog_info
       catalog_number = catalog_info.parent.at('strong')&.text&.strip
-      catalog_number || "Brak numeru"
+      catalog_number || "No number"
     else
-      "Brak numeru"
+      "No number"
     end
   end
 
   def get_stock_status(page)
     stock_info = page.at_css('div[style="text-align: center;"]')
-    stock_info ? stock_info.text.split(":").last.strip : "Brak informacji"
+    stock_info ? stock_info.text.split(":").last.strip : "No information"
   end
 
   def get_description(page)
     description_element = page.at_css('.produkt_box_tresc')
-    description_element ? description_element.text.strip : "Brak opisu"
+    description_element ? description_element.text.strip : "No description"
   end
 
   def get_specifications(page)
     specs = page.css('p').map(&:text).join(' ').strip
-    specs.empty? ? "Brak specyfikacji" : specs
+    specs.empty? ? "No specifications" : specs
   end
 
   def sanitize_filename(filename)
@@ -148,15 +147,14 @@ class ProductCrawler
   end
 
   def save_to_csv
-    CSV.open("products.csv", "w", write_headers: true, headers: ["Tytuł", "Numer katalogowy", "Specyfikacja", "Cena", "Stan magazynowy", "Opis", "Link"]) do |csv|
+    CSV.open("products.csv", "w", write_headers: true, headers: ["Title", "Catalog Number", "Specifications", "Price", "Stock Status", "Description", "Link"]) do |csv|
       @data.each do |row|
         csv << row.values
       end
     end
-    puts "Dane zapisano do pliku products.csv"
+    puts "Data saved to products.csv"
   end
 end
 
-# Uruchomienie skryptu
 crawler = ProductCrawler.new
 crawler.fetch_all_products
