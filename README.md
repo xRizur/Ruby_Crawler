@@ -4,7 +4,7 @@
 
 This project was developed to assist my client in **migrating product data** from an old website to a new one. The crawler scrapes product information such as titles, prices, catalog numbers, stock statuses, descriptions, and images from a specified website. The scraped data is then saved to a CSV file, allowing for easy import into the new system.
 
-The website used in this example is `https://tkaninydzieciece.com.pl/`, but the crawler can be adapted to work with other websites with minimal modifications.
+The website used in this crawler is `https://tkaninydzieciece.com.pl/`.
 
 ## How It Works
 
@@ -13,7 +13,7 @@ The **Ruby web crawler** uses the following technologies:
 - **Nokogiri** for parsing HTML and scraping data.
 - **Open-URI** for fetching pages over HTTP.
 
-### 🛠️ What the Crawler Does
+### What the Crawler Does
 1. **Iterates through all pages** of the product listings on the source website.
 2. Extracts product details such as:
    - Title
